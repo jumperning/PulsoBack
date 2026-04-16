@@ -187,47 +187,83 @@ async addItem(tableId: string, productId: string, quantity: number) {
   // Added missing `addItemToOrder` (TS2339).
   // Upserts an item into an order: increments quantity if the product already
   // exists on the order, otherwise inserts a new order_item row.
-async addItemToOrder(tableId: string, productId: string, quantity: number, businessId: string) {
-  // 1. Buscamos la orden abierta
-  const { data: order } = await this.supabase
+async addItemToOrder(
+  orderId: string,      // ← Ahora usamos el ID real de la orden (lo que pasa el controller)
+  productId: string,
+  quantity: number,
+  businessId: string
+) {
+  // 1. Verificamos que la orden exista y pertenezca al negocio
+  const { data: order, error: orderError } = await this.supabase
     .from('orders')
-    .select('id')
-    .eq('table_id', tableId) // <--- ASEGURATE QUE SEA table_id
+    .select('id, status')
+    .eq('id', orderId)
     .eq('business_id', businessId)
-    .in('status', ['pending', 'active'])
     .maybeSingle();
 
-  let currentOrderId;
-
-  if (!order) {
-    // 2. Si hay que crearla, usamos table_id
-    const { data: newOrder, error: createError } = await this.supabase
-      .from('orders')
-      .insert([{ 
-          table_id: tableId,    // <--- CAMBIAR A table_id
-          business_id: businessId, 
-          status: 'pending' 
-      }])
-      .select()
-      .single();
-    
-    if (createError) throw createError;
-    currentOrderId = newOrder.id;
-  } else {
-    currentOrderId = order.id;
+  if (orderError || !order) {
+    throw new NotFoundException('Orden no encontrada o no pertenece al negocio');
   }
 
-  // 3. Insertar el item (revisá también si es product_id o productId en Supabase)
-  const { error: itemError } = await this.supabase
-    .from('order_items')
-    .insert([{ 
-      order_id: currentOrderId, 
-      product_id: productId,   // <--- REVISAR SI ES CON GUION BAJO
-      quantity: quantity 
-    }]);
+  if (!['pending', 'open'].includes(order.status)) {
+    throw new BadRequestException(`No se puede agregar items a una orden en estado ${order.status}`);
+  }
 
-  if (itemError) throw itemError;
-  return { success: true };
+  // 2. Verificamos que el producto exista y pertenezca al negocio
+  const { data: product } = await this.supabase
+    .from('products')
+    .select('id, price')
+    .eq('id', productId)
+    .eq('business_id', businessId)
+    .maybeSingle();
+
+  if (!product) {
+    throw new NotFoundException('Producto no encontrado');
+  }
+
+  // 3. Insertamos (o actualizamos cantidad si ya existe el mismo producto en la orden)
+  const { data: existingItem, error: checkError } = await this.supabase
+    .from('order_items')
+    .select('id, quantity')
+    .eq('order_id', orderId)
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (checkError) throw checkError;
+
+  let result;
+
+  if (existingItem) {
+    // Ya existe → incrementamos cantidad
+    const newQuantity = existingItem.quantity + quantity;
+
+    const { data, error } = await this.supabase
+      .from('order_items')
+      .update({ quantity: newQuantity })
+      .eq('id', existingItem.id)
+      .select('*, products(*)')
+      .single();
+
+    if (error) throw error;
+    result = data;
+  } else {
+    // Nuevo item
+    const { data, error } = await this.supabase
+      .from('order_items')
+      .insert([{
+        order_id: orderId,
+        product_id: productId,
+        quantity: quantity,
+        unit_price: product.price   // opcional pero recomendado
+      }])
+      .select('*, products(*)')
+      .single();
+
+    if (error) throw error;
+    result = data;
+  }
+
+  return { success: true, data: result };
 }
   // ─── FIX 6 ────────────────────────────────────────────────────────────────
   // Added missing `updateItemQuantity` (TS2339).
