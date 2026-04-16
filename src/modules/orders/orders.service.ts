@@ -249,7 +249,7 @@ export class OrdersService {
 
   // ─── Import ────────────────────────────────────────────────────────────────
 
-  async importOrders(body: any): Promise<{ ok: number; fail: number }> {
+  async importOrders(body: any, businessId: string): Promise<{ ok: number; fail: number }> {
     const { orders, withItems } = body;
     let ok = 0;
     let fail = 0;
