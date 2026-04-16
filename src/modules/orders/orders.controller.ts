@@ -12,6 +12,10 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 
+
+
+
+
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
@@ -92,4 +96,12 @@ export class OrdersController {
   ) {
     return this.ordersService.closeOrder(orderId, body.payment_method);
   }
+
+  @Post('import')
+importOrders(
+  @Body() orders: any[],
+  @Headers('x-business-id') businessId: string,
+) {
+  return this.ordersService.importOrders(orders, businessId);
+}
 }
