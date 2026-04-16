@@ -7,7 +7,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
-
+import { AdminModule } from './modules/admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), // Una sola vez, global
@@ -16,6 +16,7 @@ import { BusinessesModule } from './modules/businesses/businesses.module';
     OrdersModule,
     AuthModule,
     BusinessesModule,
+    AdminModule
   ],
   providers: [
     {
