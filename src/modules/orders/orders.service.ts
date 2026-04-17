@@ -361,7 +361,21 @@ export class OrdersService {
       ),
       this.supabase
         .from('orders')
-        .select('id, table_id, closed_at, payment_method, order_items(quantity, products(price, name))')
+       .select(`
+          id, 
+          table_id, 
+          closed_at, 
+          payment_method,
+          order_items (
+            quantity,
+            products (
+              id,
+              name,
+              price,
+              category
+            )
+          )
+        `)
         .eq('business_id', businessId)
         .eq('status', 'closed')
         .order('closed_at', { ascending: false })
