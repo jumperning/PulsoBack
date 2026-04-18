@@ -464,17 +464,41 @@ export class OrdersService {
       .slice(0, 5)
       .map((p) => ({ ...p, revenue: Math.round(p.revenue) }));
 
-    // Recent orders
+    // Recent orders — incluir order_items completo para el detalle del modal
     const recentFormatted = recentOrders.map((o: any) => ({
       id: o.id,
       table_id: o.table_id,
       closed_at: o.closed_at,
+      created_at: o.created_at,
       payment_method: o.payment_method ?? 'cash',
-      total: Math.round((o.order_items ?? []).reduce(
-        (s: number, i: any) => s + (i.products?.price ?? 0) * (i.quantity ?? 0),
-        0,
-      )),
-      items_count: (o.order_items ?? []).reduce((s: number, i: any) => s + (i.quantity ?? 0), 0),
+      total: Math.round(
+        o.total ??
+        (o.order_items ?? []).reduce(
+          (s: number, i: any) =>
+            s + (i.unit_price ?? i.products?.price ?? 0) * (i.quantity ?? 0),
+          0,
+        ),
+      ),
+      items_count: (o.order_items ?? []).reduce(
+        (s: number, i: any) => s + (i.quantity ?? 0), 0,
+      ),
+      // Mapear campos directos del schema de order_items
+      order_items: (o.order_items ?? []).map((i: any) => ({
+        id:         i.id,
+        product_id: i.product_id,
+        quantity:   i.quantity ?? 0,
+        unit_price: i.unit_price ?? i.products?.price ?? 0,
+        unit_cost:  i.unit_cost ?? 0,
+        name:       i.name ?? i.products?.name ?? 'Producto',
+        sku:        i.sku ?? i.products?.sku ?? null,
+        products: i.products ? {
+          id:       i.products.id,
+          name:     i.products.name ?? 'Producto',
+          price:    i.products.price ?? 0,
+          category: i.products.category ?? '',
+          image_url: i.products.image_url ?? null,
+        } : null,
+      })),
     }));
 
     return {
