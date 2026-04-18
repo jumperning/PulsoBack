@@ -475,6 +475,18 @@ export class OrdersService {
         0,
       )),
       items_count: (o.order_items ?? []).reduce((s: number, i: any) => s + (i.quantity ?? 0), 0),
+      order_items: (o.order_items ?? []).map((i: any) => ({
+        id: i.id,
+        quantity: i.quantity,
+        unit_price: i.unit_price ?? i.products?.price ?? 0,
+        note: i.note ?? null,
+        products: {
+          id: i.products?.id,
+          name: i.products?.name ?? 'Producto',
+          price: i.products?.price ?? 0,
+          category: i.products?.category ?? '',
+        },
+      })),
     }));
 
     return {
