@@ -44,7 +44,15 @@ export class OrdersController {
   ) {
     return this.ordersService.getOrCreateOrder(tableId, businessId);
   }
-
+/** GET /orders/:orderId — detalle completo con items */
+@Get(':orderId')
+getOrderDetail(
+  @Param('orderId') orderId: string,
+  @Headers('x-business-id') businessId: string,
+) {
+  return this.ordersService.getOrderDetail(orderId, businessId);
+}
+  
   /** POST /orders/add-item */
   @Post('add-item')
   async addItem(
