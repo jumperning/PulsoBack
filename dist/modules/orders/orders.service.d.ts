@@ -4,25 +4,26 @@ export declare class OrdersService {
     private readonly logger;
     private readonly supabase;
     constructor(supabaseService: SupabaseService);
-    addItem(tableId: string, productId: string, quantity: number): Promise<any>;
-    importOrders(body: any): Promise<{
-        ok: number;
-        fail: number;
-    }>;
-    reopenOrder(orderId: string): Promise<{
+    getActiveOrders(businessId: string): Promise<any>;
+    getOrCreateOrder(tableId: string, businessId: string): Promise<any>;
+    addItemToOrder(orderId: string, productId: string, quantity: number, businessId: string): Promise<{
         success: boolean;
         data: any;
     }>;
-    addItemToOrder(tableId: string, productId: string, quantity: number, businessId: string): Promise<{
-        success: boolean;
-    }>;
     updateItemQuantity(itemId: string, quantity: number): Promise<{
         success: boolean;
-        data?: any;
+    } | {
+        success: boolean;
+        data: any;
     }>;
-    getActiveOrders(businessId: string): Promise<any>;
-    getOrCreateOrder(tableId: string, businessId: string): Promise<any>;
+    removeItem(itemId: string): Promise<{
+        success: boolean;
+    }>;
     markAsDelivered(orderId: string): Promise<{
+        success: boolean;
+        data: any;
+    }>;
+    reopenOrder(orderId: string): Promise<{
         success: boolean;
         data: any;
     }>;
@@ -30,8 +31,9 @@ export declare class OrdersService {
         success: boolean;
         data: any;
     }>;
-    removeItem(itemId: string): Promise<{
-        success: boolean;
+    importOrders(body: any, businessId: string): Promise<{
+        ok: number;
+        fail: number;
     }>;
     importProducts(rows: any[], businessId: string): Promise<{
         success: boolean;
@@ -59,4 +61,10 @@ export declare class OrdersService {
         top_products: any[];
         recent_orders: any;
     }>;
+    private findOrderOrFail;
+    private updateOrderStatus;
+    private fetchClosedOrders;
+    private getPeriodStart;
+    private calcOrderTotal;
+    private calcItemCount;
 }

@@ -26,18 +26,21 @@ export declare class OrdersController {
         recent_orders: any;
     }>;
     getTableOrder(tableId: string, businessId: string): Promise<any>;
-    addItem(data: {
+    addItem(body: {
         tableId: string;
         productId: string;
         quantity: number;
     }, businessId: string): Promise<{
         success: boolean;
+        data: any;
     }>;
-    updateItem(itemId: string, data: {
+    updateItem(itemId: string, body: {
         quantity: number;
     }): Promise<{
         success: boolean;
-        data?: any;
+    } | {
+        success: boolean;
+        data: any;
     }>;
     deleteItem(itemId: string): Promise<{
         success: boolean;
@@ -50,10 +53,14 @@ export declare class OrdersController {
         success: boolean;
         data: any;
     }>;
-    closeOrder(orderId: string, data?: {
+    closeOrder(orderId: string, body?: {
         payment_method?: string;
     }): Promise<{
         success: boolean;
         data: any;
+    }>;
+    importOrders(orders: any[], businessId: string): Promise<{
+        ok: number;
+        fail: number;
     }>;
 }

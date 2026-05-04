@@ -19,33 +19,40 @@ let OrdersController = class OrdersController {
     constructor(ordersService) {
         this.ordersService = ordersService;
     }
-    async getActiveOrders(businessId) {
+    getActiveOrders(businessId) {
         return this.ordersService.getActiveOrders(businessId);
     }
-    async getAnalytics(businessId, period = 'month', months = '6') {
-        return this.ordersService.getAnalytics(businessId, period, parseInt(months));
+    getAnalytics(businessId, period = 'month', months = '6') {
+        return this.ordersService.getAnalytics(businessId, period, parseInt(months, 10));
     }
-    async getTableOrder(tableId, businessId) {
+    getTableOrder(tableId, businessId) {
         return this.ordersService.getOrCreateOrder(tableId, businessId);
     }
-    async addItem(data, businessId) {
-        const order = await this.ordersService.getOrCreateOrder(data.tableId, businessId);
-        return this.ordersService.addItemToOrder(order.id, data.productId, data.quantity, businessId);
+    async addItem(body, businessId) {
+        const { tableId, productId, quantity } = body;
+        if (!tableId || !productId || !quantity) {
+            throw new common_1.BadRequestException('tableId, productId y quantity son requeridos');
+        }
+        const order = await this.ordersService.getOrCreateOrder(tableId, businessId);
+        return this.ordersService.addItemToOrder(order.id, productId, quantity, businessId);
     }
-    async updateItem(itemId, data) {
-        return this.ordersService.updateItemQuantity(itemId, data.quantity);
+    updateItem(itemId, body) {
+        return this.ordersService.updateItemQuantity(itemId, body.quantity);
     }
-    async deleteItem(itemId) {
+    deleteItem(itemId) {
         return this.ordersService.removeItem(itemId);
     }
-    async markAsDelivered(orderId) {
+    markAsDelivered(orderId) {
         return this.ordersService.markAsDelivered(orderId);
     }
-    async reopenOrder(orderId) {
+    reopenOrder(orderId) {
         return this.ordersService.reopenOrder(orderId);
     }
-    async closeOrder(orderId, data = {}) {
-        return this.ordersService.closeOrder(orderId, data.payment_method);
+    closeOrder(orderId, body = {}) {
+        return this.ordersService.closeOrder(orderId, body.payment_method);
+    }
+    importOrders(orders, businessId) {
+        return this.ordersService.importOrders(orders, businessId);
     }
 };
 exports.OrdersController = OrdersController;
@@ -54,7 +61,7 @@ __decorate([
     __param(0, (0, common_1.Headers)('x-business-id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "getActiveOrders", null);
 __decorate([
     (0, common_1.Get)('analytics'),
@@ -62,8 +69,8 @@ __decorate([
     __param(1, (0, common_1.Query)('period')),
     __param(2, (0, common_1.Query)('months')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "getAnalytics", null);
 __decorate([
     (0, common_1.Get)('table/:tableId'),
@@ -71,7 +78,7 @@ __decorate([
     __param(1, (0, common_1.Headers)('x-business-id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "getTableOrder", null);
 __decorate([
     (0, common_1.Post)('add-item'),
@@ -87,28 +94,28 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "updateItem", null);
 __decorate([
     (0, common_1.Delete)('item/:itemId'),
     __param(0, (0, common_1.Param)('itemId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "deleteItem", null);
 __decorate([
     (0, common_1.Patch)(':orderId/mark-delivered'),
     __param(0, (0, common_1.Param)('orderId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "markAsDelivered", null);
 __decorate([
     (0, common_1.Patch)(':orderId/reopen'),
     __param(0, (0, common_1.Param)('orderId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "reopenOrder", null);
 __decorate([
     (0, common_1.Post)('close/:orderId'),
@@ -116,8 +123,16 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "closeOrder", null);
+__decorate([
+    (0, common_1.Post)('import'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Headers)('x-business-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Array, String]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "importOrders", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.Controller)('orders'),
     __metadata("design:paramtypes", [orders_service_1.OrdersService])
