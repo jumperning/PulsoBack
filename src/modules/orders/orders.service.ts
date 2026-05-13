@@ -220,17 +220,21 @@ export class OrdersService {
     return this.updateOrderStatus(orderId, 'active', { delivered_at: new Date().toISOString() });
   }
 
-  /** active → pending (deshacer entrega) */
+  /** active | closed → pending (deshacer entrega o reapertura de orden cerrada) */
   async reopenOrder(orderId: string) {
     const order = await this.findOrderOrFail(orderId);
 
-    if (order.status !== 'active') {
+    if (!['active', 'closed'].includes(order.status)) {
       throw new BadRequestException(
-        `Solo se pueden reabrir órdenes activas (estado actual: "${order.status}")`,
+        `Solo se pueden reabrir órdenes activas o cerradas (estado actual: "${order.status}")`,
       );
     }
 
-    return this.updateOrderStatus(orderId, 'pending', { delivered_at: null });
+    return this.updateOrderStatus(orderId, 'pending', {
+      delivered_at: null,
+      closed_at: null,
+      payment_method: null,
+    });
   }
 
   /** pending | active → closed */
@@ -274,10 +278,16 @@ export class OrdersService {
 
         if (withItems && row._items?.length) {
           for (const item of row._items) {
+            // Frontend normalizes keys: name, quantity, unit_price, unit_cost, sku
+            const itemName  = item.name  ?? item.nombre  ?? 'Producto sin nombre';
+            const itemPrice = item.unit_price ?? item.precio ?? 0;
+            const itemQty   = item.quantity   ?? item.qty    ?? 1;
+            const itemCost  = item.unit_cost  ?? item.costo  ?? 0;
+
             let { data: product } = await this.supabase
               .from('products')
               .select('*')
-              .eq('name', item.nombre)
+              .eq('name', itemName)
               .eq('business_id', order.business_id)
               .maybeSingle();
 
@@ -285,8 +295,8 @@ export class OrdersService {
               const { data: newProduct, error: productError } = await this.supabase
                 .from('products')
                 .insert([{
-                  name: item.nombre,
-                  price: item.precio,
+                  name: itemName,
+                  price: itemPrice,
                   business_id: order.business_id,
                   is_active: true,
                 }])
@@ -302,9 +312,9 @@ export class OrdersService {
               .insert([{
                 order_id: order.id,
                 product_id: product.id,
-                quantity: item.qty,
-                unit_price: item.precio ?? 0,
-                unit_cost: item.costo ?? 0,
+                quantity: itemQty,
+                unit_price: itemPrice,
+                unit_cost: itemCost,
               }]);
 
             if (itemError) throw itemError;
